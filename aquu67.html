@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQUU — Pure Origin</title>
+<meta name="description" content="AQUU — природная вода премиум-класса из единственного ледникового источника. Pure Origin.">
+<style>
+  :root{
+    --abyss:#050f16;
+    --deep:#0c2836;
+    --deep-2:#123b4c;
+    --mid:#1d6fa5;
+    --accent:#5fc7d6;
+    --glacier:#cdeef4;
+    --foam:#f6fafb;
+    --mist:#9db8c1;
+    --line: rgba(255,255,255,0.10);
+    --font-display: 'Cinzel', 'Copperplate', 'Big Caslon', 'Iowan Old Style', Georgia, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--abyss);
+    color: var(--foam);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    position: relative;
+  }
+  img, svg{ display:block; max-width:100%; }
+  a{ color: inherit; text-decoration:none; }
+  a:focus-visible, button:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  h1,h2,h3{ margin:0; font-family: var(--font-display); font-weight: 600; }
+  p{ margin:0; }
+  section{ position: relative; z-index: 1; }
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  /* ---------------------------------------------------
+     LIVING WATER BACKGROUND — fixed behind the whole page
+  --------------------------------------------------- */
+  .water-bg{
+    position: fixed;
+    top:0; left:0;
+    width:100vw; height:100vh;
+    z-index:-2;
+    background: var(--abyss);
+    overflow:hidden;
+    opacity:0;
+    transition: opacity 1.8s ease-in-out;
+    pointer-events:none;
+  }
+  .water-bg.loaded{ opacity:1; }
+  #waterCanvas{
+    position:absolute; top:0; left:0;
+    width:100%; height:100%;
+    display:block;
+    pointer-events:none;
+  }
+  .water-overlay{
+    position:fixed; inset:0;
+    z-index:-1;
+    background:
+      radial-gradient(circle at 50% 20%, rgba(5,15,22,0.12) 0%, rgba(5,15,22,0.6) 100%),
+      linear-gradient(180deg, rgba(5,15,22,0.15) 0%, rgba(5,15,22,0.45) 100%);
+    pointer-events:none;
+  }
+
+  /* ---------------------------------------------------
+     NAV
+  --------------------------------------------------- */
+  .site-header{
+    position: fixed;
+    top:0; left:0; right:0;
+    z-index: 1000;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 24px;
+    padding: 18px clamp(20px, 6vw, 64px);
+    background: rgba(5,15,22,0.45);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-mark{ width:28px; height:28px; flex-shrink:0; }
+  .brand-mark svg{ width:100%; height:100%; }
+  .brand-word{
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: linear-gradient(115deg, var(--deep-2) 0%, var(--mid) 35%, var(--accent) 70%, var(--glacier) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .nav-right{
+    display:flex;
+    align-items:center;
+    gap: clamp(18px, 3vw, 40px);
+  }
+  .site-nav{ display:flex; gap: clamp(16px, 2.6vw, 32px); }
+  .site-nav a{
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--foam);
+    opacity: 0.82;
+    padding-bottom: 3px;
+    border-bottom: 1px solid transparent;
+    transition: opacity 0.25s ease, border-color 0.25s ease;
+  }
+  .site-nav a:hover{ opacity:1; border-color: var(--accent); }
+
+  .btn-buy{
+    display:inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--mid));
+    color: #051019;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 12px 26px;
+    border-radius: 30px;
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 0 18px rgba(95,199,214,0.35);
+    transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .btn-buy:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 0 28px rgba(95,199,214,0.6);
+    border-color: rgba(255,255,255,0.5);
+  }
+
+  @media (max-width: 860px){
+    .site-nav{ display:none; }
+  }
+
+  /* ---------------------------------------------------
+     HERO
+  --------------------------------------------------- */
+  .hero{
+    min-height: 100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 140px clamp(20px, 8vw, 120px) 80px;
+  }
+  .hero-content{ max-width: 780px; }
+  .hero h1{
+    font-size: clamp(38px, 6.4vw, 70px);
+    line-height: 1.12;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  }
+  .hero h1 .aquu-brand{
+    display:inline-block;
+    background: linear-gradient(90deg, var(--deep-2) 0%, var(--mid) 30%, var(--accent) 65%, var(--glacier) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,0.35));
+  }
+  .hero p{
+    margin: 26px auto 0;
+    max-width: 54ch;
+    font-size: clamp(15px, 1.8vw, 18px);
+    line-height: 1.7;
+    color: var(--glacier);
+    opacity: 0.9;
+  }
+  .hero .btn-buy{
+    margin-top: 40px;
+    padding: 17px 42px;
+    font-size: 13px;
+  }
+  .scroll-cue{
+    position:absolute;
+    left:50%;
+    bottom: 36px;
+    transform: translateX(-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .scroll-cue .line{
+    width:1px; height:44px;
+    background: linear-gradient(var(--accent), transparent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:0.25; transform: scaleY(0.7); }
+    50%{ opacity:1; transform: scaleY(1); }
+  }
+
+  /* ---------------------------------------------------
+     Shared "glass panel" section treatment
+  --------------------------------------------------- */
+  .panel{
+    background: rgba(6,19,27,0.6);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid var(--line);
+  }
+
+  /* ---------------------------------------------------
+     FEATURES
+  --------------------------------------------------- */
+  .features{
+    padding: 110px clamp(20px, 8vw, 120px);
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+  .feature-card{
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 38px 30px;
+    border-radius: 6px;
+    transition: border-color 0.35s ease, transform 0.35s ease, background 0.35s ease;
+  }
+  .feature-card:hover{
+    border-color: rgba(95,199,214,0.55);
+    background: rgba(255,255,255,0.045);
+    transform: translateY(-4px);
+  }
+  .feature-card h3{
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .feature-card p{
+    color: var(--mist);
+    line-height: 1.7;
+    font-size: 14.5px;
+  }
+  @media (max-width: 860px){
+    .features{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------------------------------------------------
+     ORIGIN
+  --------------------------------------------------- */
+  .origin{
+    padding: 130px clamp(20px, 8vw, 120px);
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 72px;
+    align-items:center;
+  }
+  .origin-figure{
+    aspect-ratio: 4/5;
+    position:relative;
+    border-radius: 4px;
+    overflow:hidden;
+    background: linear-gradient(165deg, var(--deep-2) 0%, var(--deep) 55%, var(--abyss) 100%);
+    border: 1px solid var(--line);
+  }
+  .origin-figure .peak{
+    position:absolute;
+    background: linear-gradient(0deg, rgba(205,238,244,0.22), rgba(205,238,244,0));
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    filter: drop-shadow(0 0 24px rgba(95,199,214,0.25));
+  }
+  .origin-figure .peak.p1{ width:70%; height:55%; left:8%; bottom:0; }
+  .origin-figure .peak.p2{ width:52%; height:38%; left:38%; bottom:0; opacity:0.75; }
+  .origin-figure .haze{
+    position:absolute; inset:0;
+    background: linear-gradient(0deg, rgba(5,15,22,0.5), transparent 45%);
+  }
+  .origin-copy h2{
+    font-size: clamp(28px, 3.8vw, 44px);
+    max-width: 12ch;
+  }
+  .origin-copy .body{
+    margin-top: 24px;
+    max-width: 48ch;
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--mist);
+  }
+  .origin-copy .body + .body{ margin-top: 16px; }
+  @media (max-width: 860px){
+    .origin{ grid-template-columns: 1fr; gap: 44px; padding-top: 96px; padding-bottom: 96px; }
+  }
+
+  /* ---------------------------------------------------
+     COMPOSITION
+  --------------------------------------------------- */
+  .composition{
+    padding: 130px clamp(20px, 8vw, 120px);
+  }
+  .composition h2{
+    font-size: clamp(26px, 3.4vw, 40px);
+    max-width: 15ch;
+  }
+  .composition > .body{
+    margin-top: 18px;
+    max-width: 54ch;
+    color: var(--mist);
+    line-height: 1.75;
+    font-size: 15.5px;
+  }
+  .spec-list{ margin-top: 56px; border-top: 1px solid var(--line); }
+  .spec-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap: 20px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .spec-row .label{ font-size: 15px; color: var(--glacier); }
+  .spec-row .note{ font-size: 12.5px; color: var(--mist); margin-top: 4px; }
+  .spec-row .value{
+    font-family: var(--font-display);
+    font-size: clamp(19px, 2.2vw, 26px);
+    white-space: nowrap;
+  }
+
+  /* ---------------------------------------------------
+     BOTTLE
+  --------------------------------------------------- */
+  .bottle-section{
+    padding: 130px clamp(20px, 8vw, 120px);
+    display:grid;
+    grid-template-columns: 0.8fr 1fr;
+    gap: 72px;
+    align-items:center;
+  }
+  .bottle-copy h2{ font-size: clamp(26px, 3.4vw, 40px); max-width: 12ch; }
+  .bottle-copy .body{ margin-top: 22px; max-width: 42ch; font-size: 15.5px; line-height: 1.8; color: var(--mist); }
+  .bottle-copy .body + .body{ margin-top: 14px; }
+  .bottle-wrap{ display:flex; justify-content:center; }
+  .bottle{ position:relative; width: 150px; height: 380px; }
+  .bottle .cap{
+    width:44px; height:20px; margin:0 auto;
+    background: linear-gradient(180deg, var(--deep-2), var(--abyss));
+    border-radius: 3px 3px 0 0;
+  }
+  .bottle .neck{
+    width:36px; height:60px; margin:0 auto;
+    background: linear-gradient(100deg, rgba(205,238,244,0.55), rgba(205,238,244,0.15) 60%, rgba(205,238,244,0.45));
+    border-left:1px solid rgba(255,255,255,0.5);
+    border-right:1px solid rgba(0,0,0,0.15);
+  }
+  .bottle .body-glass{
+    position:relative;
+    width:150px; height:300px;
+    border-radius: 18px 18px 26px 26px;
+    background: linear-gradient(100deg, rgba(205,238,244,0.55) 0%, rgba(205,238,244,0.16) 45%, rgba(205,238,244,0.5) 100%);
+    border-left:1px solid rgba(255,255,255,0.5);
+    border-right:1px solid rgba(0,0,0,0.15);
+    overflow:hidden;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.55), 0 0 40px rgba(95,199,214,0.15);
+  }
+  .bottle .body-glass::before{
+    content:"";
+    position:absolute; top:0; left:14%;
+    width:14%; height:100%;
+    background: rgba(255,255,255,0.6);
+    filter: blur(2px);
+  }
+  .bottle .label{ position:absolute; left:0; right:0; top:46%; text-align:center; }
+  .bottle .label .word{
+    font-family: var(--font-display);
+    font-size: 18px; font-weight:700;
+    letter-spacing: 0.14em;
+    color: #0a1e27;
+  }
+  .bottle .label .sub{
+    margin-top:4px; font-size:8px; letter-spacing:0.2em;
+    text-transform:uppercase; color:#3d5860;
+  }
+  @media (max-width: 860px){
+    .bottle-section{ grid-template-columns:1fr; gap:48px; padding-top:96px; padding-bottom:96px; }
+    .bottle-wrap{ order:-1; }
+  }
+
+  /* ---------------------------------------------------
+     CONTACTS
+  --------------------------------------------------- */
+  .contacts-section{
+    padding: 110px clamp(20px, 8vw, 120px);
+    text-align:center;
+  }
+  .contacts-section h2{
+    font-size: clamp(26px, 3.4vw, 38px);
+    letter-spacing: 0.02em;
+  }
+  .contacts-section .subtitle{
+    margin-top: 12px;
+    font-family: var(--font-display);
+    font-size: 16px;
+    letter-spacing: 0.03em;
+    color: var(--mist);
+  }
+  .contacts-grid{
+    margin: 48px auto 0;
+    max-width: 420px;
+  }
+  .contact-card{
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 32px 26px;
+    border-radius: 6px;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+  }
+  .contact-card:hover{ border-color: rgba(95,199,214,0.5); transform: translateY(-3px); }
+  .contact-card a{ font-size: 18px; font-weight: 600; color: var(--foam); transition: color 0.3s ease; }
+  .contact-card a:hover{ color: var(--accent); }
+
+  /* ---------------------------------------------------
+     FOOTER
+  --------------------------------------------------- */
+  footer{
+    position: relative; z-index: 1;
+    background: rgba(4,12,17,0.92);
+    border-top: 1px solid var(--line);
+    padding: 60px clamp(20px, 8vw, 120px) 32px;
+  }
+  .footer-top{
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap: 40px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--line);
+  }
+  .footer-brand .brand-word{ font-size: 21px; }
+  .footer-brand .tag{
+    margin-top:8px;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color: var(--mist);
+  }
+  .footer-links{ display:flex; gap: 56px; flex-wrap:wrap; }
+  .footer-col h3{
+    font-family: var(--font-sans);
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color: var(--accent);
+    margin-bottom:14px;
+  }
+  .footer-col a, .footer-col p{
+    display:block;
+    font-size:13.5px;
+    color: var(--mist);
+    margin-bottom:9px;
+  }
+  .footer-col a:hover{ color: var(--foam); }
+  .footer-bottom{
+    padding-top: 24px;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    font-size:12.5px;
+    color: rgba(157,184,193,0.7);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .scroll-cue .line{ animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Живой водяной фон, идёт под всей страницей -->
+  <div class="water-bg" id="waterBg">
+    <canvas id="waterCanvas"></canvas>
+  </div>
+  <div class="water-overlay"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <!-- LOGO PLACEHOLDER: замените этот SVG на ваш логотип, например
+           <img src="data:image/png;base64,....." alt="AQUU">
+           Пришлите файл логотипа — вставлю его как base64 прямо в этот
+           же HTML, чтобы сайт остался одним самодостаточным файлом. -->
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 3C20 3 8 18.5 8 26.5C8 33.4036 13.3726 38 20 38C26.6274 38 32 33.4036 32 26.5C32 18.5 20 3 20 3Z"
+                stroke="#cdeef4" stroke-width="1.4" fill="rgba(205,238,244,0.12)"/>
+        </svg>
+      </span>
+      <span class="brand-word">AQUU</span>
+    </div>
+    <div class="nav-right">
+      <nav class="site-nav">
+        <a href="#origin">Происхождение</a>
+        <a href="#composition">Состав</a>
+        <a href="#bottle">Бутылка</a>
+        <a href="#contacts">Контакты</a>
+      </nav>
+      <a href="#contacts" class="btn-buy">Заказать AQUU</a>
+    </div>
+  </header>
+
+  <section class="hero" id="top">
+    <div class="hero-content">
+      <h1><span class="aquu-brand">AQUU</span> — PURE ORIGIN</h1>
+      <p>Природная вода премиум-класса из единственного ледникового источника, отфильтрованная базальтом на протяжении десяти лет. Создана для тех, кто ценит баланс, чистоту и результат.</p>
+      <a href="#contacts" class="btn-buy">Заказать сейчас</a>
+    </div>
+    <a class="scroll-cue" href="#origin">
+      <span class="sr-only">Прокрутить вниз</span>
+      <span class="line" aria-hidden="true"></span>
+    </a>
+  </section>
+
+  <section class="features panel">
+    <div class="feature-card">
+      <h3>Природный баланс</h3>
+      <p>Идеально сбалансированный минеральный состав, обеспечивающий максимальную усвояемость и естественный освежающий вкус.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Премиум фильтрация</h3>
+      <p>Многоступенчатая система естественной очистки сохраняет все полезные микроэлементы и природную структуру воды.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Для активной жизни</h3>
+      <p>Разработана для поддержки вашего водного баланса во время тренировок, работы и ежедневной активности.</p>
+    </div>
+  </section>
+
+  <section class="origin panel" id="origin">
+    <div class="origin-figure" aria-hidden="true">
+      <div class="peak p2"></div>
+      <div class="peak p1"></div>
+      <div class="haze"></div>
+    </div>
+    <div class="origin-copy">
+      <h2>Источник, а не завод.</h2>
+      <p class="body">Большая часть воды проходит через трубопроводы, смешивающие десятки источников в один усреднённый вкус. AQUU берётся из единственного источника, высоко в древних базальтовых породах, и никогда не смешивается с другой водой.</p>
+      <p class="body">То, что выходит из земли, — то и попадает на стол: ничего не добавлено, ничего не убрано, ничего не ускорено.</p>
+    </div>
+  </section>
+
+  <section class="composition panel" id="composition">
+    <h2>Что действительно в составе.</h2>
+    <p class="body">Каждая партия проверяется у источника и повторно перед розливом. Вот цифры, стоящие за этим ледниковым источником.</p>
+    <div class="spec-list">
+      <div class="spec-row">
+        <div>
+          <div class="label">pH-баланс</div>
+          <div class="note">Природная щёлочность, без корректировки</div>
+        </div>
+        <div class="value">7.6</div>
+      </div>
+      <div class="spec-row">
+        <div>
+          <div class="label">Общая минерализация (TDS)</div>
+          <div class="note">Низкая минеральная нагрузка, чистый вкус</div>
+        </div>
+        <div class="value">94 мг/л</div>
+      </div>
+      <div class="spec-row">
+        <div>
+          <div class="label">Кремний</div>
+          <div class="note">Результат базальтовой фильтрации</div>
+        </div>
+        <div class="value">18.2 мг/л</div>
+      </div>
+      <div class="spec-row">
+        <div>
+          <div class="label">Кальций и магний</div>
+          <div class="note">Природного происхождения</div>
+        </div>
+        <div class="value">12.4 / 3.8 мг/л</div>
+      </div>
+      <div class="spec-row">
+        <div>
+          <div class="label">Натрий</div>
+          <div class="note">Значительно ниже среднего по рынку</div>
+        </div>
+        <div class="value">2.1 мг/л</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottle-section panel" id="bottle">
+    <div class="bottle-wrap">
+      <div class="bottle" aria-hidden="true">
+        <div class="cap"></div>
+        <div class="neck"></div>
+        <div class="body-glass">
+          <div class="label">
+            <div class="word">AQUU</div>
+            <div class="sub">Pure Origin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottle-copy">
+      <h2>Выдувное стекло, не литьё.</h2>
+      <p class="body">Каждая бутылка AQUU выполнена из плотного, увесистого стекла — созданного для повторного использования, а не для выбрасывания. Широкое основание держит её устойчиво на столе; узкое горлышко обеспечивает чистый разлив.</p>
+      <p class="body">Форма всегда одна и та же — меняется только то, сколько раз вы вернули бутылку в оборот.</p>
+    </div>
+  </section>
+
+  <section class="contacts-section panel" id="contacts">
+    <h2>Свяжитесь с нами</h2>
+    <p class="subtitle">По всем вопросам сотрудничества и заказов</p>
+    <div class="contacts-grid">
+      <div class="contact-card">
+        <a href="mailto:b1669989@gmail.com">b1669989@gmail.com</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="brand-word">AQUU</div>
+        <div class="tag">Pure Origin</div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h3>Разделы</h3>
+          <a href="#origin">Происхождение</a>
+          <a href="#composition">Состав</a>
+          <a href="#bottle">Бутылка</a>
+        </div>
+        <div class="footer-col">
+          <h3>Контакты</h3>
+          <a href="mailto:b1669989@gmail.com">b1669989@gmail.com</a>
+          <p>Розлив у источника</p>
+        </div>
+        <div class="footer-col">
+          <h3>Мы в сети</h3>
+          <a href="#">Instagram</a>
+          <a href="#">Telegram</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 AQUU Official. Все права защищены.</span>
+      <span>Pure Origin</span>
+    </div>
+  </footer>
+
+  <!-- ЖИВАЯ ГЛУБОКАЯ ВОДА С РЕАКЦИЕЙ НА КУРСОР -->
+  <script>
+    (function() {
+      'use strict';
+
+      const canvas = document.getElementById('waterCanvas');
+      const bgContainer = document.getElementById('waterBg');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d', { alpha: false });
+
+      const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const isLowEndDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
+
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+
+      const mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000, isHovered: false };
+      const ripples = [];
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = Math.min(window.devicePixelRatio || 1, isLowEndDevice ? 1.25 : 2);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+      }
+
+      window.addEventListener('resize', resize, { passive: true });
+      resize();
+
+      function addRipple(x, y) {
+        if (ripples.length > 8) ripples.shift();
+        ripples.push({
+          x: x, y: y, radius: 0,
+          maxRadius: Math.max(width, height) * 0.35,
+          alpha: 0.7,
+          speed: 2.5 + Math.random() * 1.5
+        });
+      }
+
+      function handlePointerMove(e) {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        mouse.targetX = clientX;
+        mouse.targetY = clientY;
+        mouse.isHovered = true;
+      }
+
+      function handlePointerDown(e) {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        addRipple(clientX, clientY);
+      }
+
+      window.addEventListener('mousemove', handlePointerMove, { passive: true });
+      window.addEventListener('touchmove', handlePointerMove, { passive: true });
+      window.addEventListener('mousedown', handlePointerDown, { passive: true });
+      window.addEventListener('touchstart', handlePointerDown, { passive: true });
+      window.addEventListener('mouseleave', () => { mouse.isHovered = false; });
+
+      const layers = [
+        { speed: 0.0003, scaleX: 0.0015, scaleY: 0.001, amp: 30, color: '#040d13' },
+        { speed: 0.0006, scaleX: 0.0030, scaleY: 0.002, amp: 22, color: '#0a222e' },
+        { speed: 0.0010, scaleX: 0.0050, scaleY: 0.003, amp: 14, color: '#123b4c' },
+        { speed: 0.0015, scaleX: 0.0090, scaleY: 0.005, amp: 8,  color: '#3d8a97' }
+      ];
+
+      const bokehs = [];
+      const bokehCount = isLowEndDevice ? 25 : 55;
+
+      for (let i = 0; i < bokehCount; i++) {
+        bokehs.push({
+          xRatio: Math.random(),
+          yRatio: Math.pow(Math.random(), 1.8),
+          baseRadius: 4 + Math.random() * 22,
+          speed: 0.0003 + Math.random() * 0.0008,
+          phase: Math.random() * Math.PI * 2,
+          alpha: 0.2 + Math.random() * 0.6,
+          warmth: Math.random() > 0.4
+        });
+      }
+
+      let time = 0;
+
+      function animate(now) {
+        time = isReducedMotion ? 1000 : now;
+
+        mouse.x += (mouse.targetX - mouse.x) * 0.05;
+        mouse.y += (mouse.targetY - mouse.y) * 0.05;
+
+        const baseGrad = ctx.createLinearGradient(0, 0, 0, height);
+        baseGrad.addColorStop(0, '#123b4c');
+        baseGrad.addColorStop(0.3, '#0c2836');
+        baseGrad.addColorStop(0.7, '#071821');
+        baseGrad.addColorStop(1, '#03090d');
+
+        ctx.fillStyle = baseGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        const step = isLowEndDevice ? 32 : 18;
+        const rows = Math.ceil(height / step) + 1;
+        const cols = Math.ceil(width / step) + 1;
+
+        const mouseDx = (mouse.x - width / 2) * 0.03;
+        const mouseDy = (mouse.y - height / 2) * 0.03;
+
+        ctx.save();
+
+        for (let l = 0; l < (isLowEndDevice ? 2 : layers.length); l++) {
+          const layer = layers[l];
+          const t = time * layer.speed;
+
+          ctx.fillStyle = layer.color;
+          ctx.globalAlpha = 0.4 + l * 0.15;
+          ctx.beginPath();
+
+          for (let y = 0; y <= rows; y++) {
+            const py = y * step;
+            for (let x = 0; x <= cols; x++) {
+              const px = x * step;
+
+              const wave1 = Math.sin(px * layer.scaleX + t + py * layer.scaleY);
+              const wave2 = Math.cos(py * layer.scaleY * 1.5 - t * 0.8 + px * layer.scaleX * 0.8);
+              const wave3 = Math.sin((px + py) * 0.003 + t * 1.2);
+
+              let mouseDistFactor = 0;
+              if (mouse.isHovered) {
+                const dx = px - (mouse.x + mouseDx);
+                const dy = py - (mouse.y + mouseDy);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 250) {
+                  mouseDistFactor = Math.cos((dist / 250) * (Math.PI / 2)) * 12;
+                }
+              }
+
+              const offset = (wave1 + wave2 + wave3) * layer.amp + mouseDistFactor;
+
+              if (x === 0 && y === 0) {
+                ctx.moveTo(px, py + offset);
+              } else {
+                ctx.lineTo(px, py + offset);
+              }
+            }
+          }
+
+          ctx.lineTo(width, height);
+          ctx.lineTo(0, height);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+
+        const topSunGrad = ctx.createRadialGradient(width * 0.5, 0, 10, width * 0.5, 0, height * 0.55);
+        topSunGrad.addColorStop(0, 'rgba(230, 248, 250, 0.4)');
+        topSunGrad.addColorStop(0.3, 'rgba(120, 210, 225, 0.22)');
+        topSunGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        ctx.fillStyle = topSunGrad;
+        ctx.fillRect(0, 0, width, height * 0.6);
+
+        for (let i = 0; i < bokehs.length; i++) {
+          const b = bokehs[i];
+          const bx = (b.xRatio * width) + Math.sin(time * b.speed + b.phase) * 20 + mouseDx * 0.4;
+          const by = (b.yRatio * height) + Math.cos(time * b.speed * 0.8 + b.phase) * 15 + mouseDy * 0.4;
+
+          const pulse = Math.sin(time * 0.0015 + b.phase) * 0.3 + 0.7;
+          const radius = b.baseRadius * pulse;
+          const currentAlpha = b.alpha * (0.5 + pulse * 0.5);
+
+          const grad = ctx.createRadialGradient(bx, by, 0, bx, by, radius);
+          if (b.warmth) {
+            grad.addColorStop(0, `rgba(255, 250, 235, ${currentAlpha})`);
+            grad.addColorStop(0.5, `rgba(255, 225, 190, ${currentAlpha * 0.5})`);
+            grad.addColorStop(1, 'rgba(255, 225, 190, 0)');
+          } else {
+            grad.addColorStop(0, `rgba(224, 248, 250, ${currentAlpha})`);
+            grad.addColorStop(0.5, `rgba(95, 199, 214, ${currentAlpha * 0.5})`);
+            grad.addColorStop(1, 'rgba(95, 199, 214, 0)');
+          }
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(bx, by, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+
+        if (ripples.length > 0) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'screen';
+
+          for (let i = ripples.length - 1; i >= 0; i--) {
+            const r = ripples[i];
+            r.radius += r.speed;
+            r.alpha -= 0.006;
+
+            if (r.alpha <= 0 || r.radius >= r.maxRadius) {
+              ripples.splice(i, 1);
+              continue;
+            }
+
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = `rgba(205, 238, 244, ${r.alpha})`;
+            ctx.beginPath();
+            ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha * 0.8})`;
+            ctx.beginPath();
+            ctx.arc(r.x, r.y, Math.max(0, r.radius - 4), 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        if (!isReducedMotion) {
+          requestAnimationFrame(animate);
+        }
+      }
+
+      window.addEventListener('load', () => {
+        requestAnimationFrame(animate);
+        setTimeout(() => { bgContainer.classList.add('loaded'); }, 100);
+      });
+
+      if (document.readyState === 'complete') {
+        requestAnimationFrame(animate);
+        bgContainer.classList.add('loaded');
+      }
+    })();
+
+    // Пузырьки/бликового слоя достаточно у канваса — доп. частицы не нужны
+  </script>
+
+</body>
+</html>
